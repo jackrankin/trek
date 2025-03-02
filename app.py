@@ -1,6 +1,5 @@
 import os
 import json
-import uuid
 import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
@@ -10,9 +9,9 @@ app = Flask(__name__)
 CORS(app)
 
 # Set your Pinata API credentials here
-PINATA_API_KEY = '845041f604a7899f6c26'
-PINATA_SECRET_KEY = 'ab5fbe3e36f6ac6a92a42058656c3f7bda9f651ef148ab3650f59b8a8215c848'
 PINATA_URL = 'https://api.pinata.cloud'
+PINATA_API_KEY = os.getenv("PINATA_API_KEY")
+PINATA_SECRET_KEY = os.getenv("PINATA_SECRET_KEY")
 
 def upload_to_pinata(info):
     try:
@@ -53,7 +52,7 @@ def parse_gpx(file_path, username):
         dist = 0
         pace = 0
         try:
-            tracker = GPXAnalyzer(file_path)
+            tracker = GPXAnalyzer(file)  # Pass the file object directly
             dist = tracker.calculate_total_distance()
             pace = tracker.calculate_average_pace()
         except Exception as e:

@@ -1,12 +1,18 @@
 import gpxpy
 import gpxpy.gpx
 from geopy.distance import geodesic
-
 class GPXAnalyzer:
     def __init__(self, gpx_file):
-        # with open(gpx_file, 'r') as f:
-        #     self.gpx = gpxpy.parse(f)
-        self.gpx = gpxpy.parse(gpx_file)
+        # Check if gpx_file is a string (file path) or a file-like object
+        if isinstance(gpx_file, str):
+            # It's a file path
+            with open(gpx_file, 'r') as f:
+                self.gpx = gpxpy.parse(f)
+        else:
+            # It's already a file object
+            # Make sure to reset the file pointer
+            gpx_file.seek(0)
+            self.gpx = gpxpy.parse(gpx_file)
     
     def calculate_total_distance(self):
         total_distance = 0.0
