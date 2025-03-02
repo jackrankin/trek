@@ -4,7 +4,7 @@ import uuid
 import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
-from stat_track import StatTrack
+from stat_track import GPXAnalyzer
 
 app = Flask(__name__)
 CORS(app)
@@ -17,7 +17,7 @@ PINATA_URL = 'https://api.pinata.cloud'
 def upload_to_pinata(info):
     try:
         json_data = json.dumps(info)
-        # print(json_data)
+
         url = f"{PINATA_URL}/pinning/pinFileToIPFS"
         
         headers = {
@@ -30,7 +30,7 @@ def upload_to_pinata(info):
         }
 
         response = requests.post(url, headers=headers, files=files)
-        print(response.status_code)
+
         if response.status_code == 200:
             return response.json()
         else:
@@ -49,13 +49,13 @@ def parse_gpx(file_path, username):
         root = tree.getroot()
         namespace = {'gpx': 'http://www.topografix.com/GPX/1/1'}
 
-        print(file_path)
+
         dist = 0
         pace = 0
         try:
-            tracker = StatTrack(file_path)
-            dist = tracker.getMileDist()
-            pace = tracker.getMinMile()
+            tracker = GPXAnalyzer(file_path)
+            dist = tracker.calculate_total_distance()
+            pace = tracker.calculate_average_pace()
         except Exception as e:
             print(e)
 
@@ -91,13 +91,10 @@ def upload_gps():
             return jsonify({"error": "No file uploaded"}), 400
 
         info = parse_gpx(file, username)
-        print(info["name"], info["pace"], info["distance"], info["coordinates"][0])
 
         ipfs_hash = upload_to_pinata(info)
 
         js = jsonify(info)
-
-        print(js)
 
         return js, 200
 
@@ -123,7 +120,7 @@ def get_constellations():
 
         if response.status_code == 200:
             pinned_files = response.json()['rows']
-            print(pinned_files)
+         
             all_constellations = []
             for file in pinned_files:
                 ipfs_hash = file['ipfs_pin_hash']
