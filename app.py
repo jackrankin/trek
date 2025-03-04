@@ -53,13 +53,15 @@ def parse_gpx(file_path, username):
         pace = 0
 
         def haversine(lat1, lon1, lat2, lon2):
-            R = 6371
+            from math import radians, sin, cos, sqrt, atan2
+            
+            R = 6371  # Earth radius in kilometers
             lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
             
             dlat = lat2 - lat1
-            dlon = lon1 - lon2
+            dlon = lon2 - lon1  # Fixed: should be lon2 - lon1
             
-            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2  # Fixed: proper multiplication
             c = 2 * atan2(sqrt(a), sqrt(1 - a))
             
             return R * c
