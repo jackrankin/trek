@@ -9,12 +9,8 @@ app = Flask(__name__)
 CORS(app)
 
 PINATA_URL = 'https://api.pinata.cloud'
-# PINATA_API_KEY = os.getenv("PINATA_API_KEY")
-# PINATA_SECRET_KEY = os.getenv("PINATA_SECRET_KEY")
-
-PINATA_API_KEY = "845041f604a7899f6c26"
-PINATA_SECRET_KEY = "ab5fbe3e36f6ac6a92a42058656c3f7bda9f651ef148ab3650f59b8a8215c848"
-
+PINATA_API_KEY = os.getenv("PINATA_API_KEY")
+PINATA_SECRET_KEY = os.getenv("PINATA_SECRET_KEY")
 
 def upload_to_pinata(info):
     try:
