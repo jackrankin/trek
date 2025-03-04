@@ -9,8 +9,12 @@ app = Flask(__name__)
 CORS(app)
 
 PINATA_URL = 'https://api.pinata.cloud'
-PINATA_API_KEY = os.getenv("PINATA_API_KEY")
-PINATA_SECRET_KEY = os.getenv("PINATA_SECRET_KEY")
+# PINATA_API_KEY = os.getenv("PINATA_API_KEY")
+# PINATA_SECRET_KEY = os.getenv("PINATA_SECRET_KEY")
+
+PINATA_API_KEY = "845041f604a7899f6c26"
+PINATA_SECRET_KEY = "ab5fbe3e36f6ac6a92a42058656c3f7bda9f651ef148ab3650f59b8a8215c848"
+
 
 def upload_to_pinata(info):
     try:
@@ -75,7 +79,7 @@ def parse_gpx(file_path, username):
         for i in range(1, len(coordinates)):
             dist += haversine(*coordinates[i - 1], *coordinates[i])
         
-        dist *= 1.6
+        dist = dist / 1.6
 
         info = {
             "name" : username,
@@ -88,7 +92,6 @@ def parse_gpx(file_path, username):
         return info 
 
     except Exception as e:
-        print(e)
         return []
 
 @app.route('/upload_gpx', methods=['POST'])
