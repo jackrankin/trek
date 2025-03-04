@@ -138,7 +138,8 @@ def get_constellations():
 
                 if file_response.status_code == 200:
                     constellation_data = file_response.json()
-                    all_constellations.append(constellation_data)
+                    if "coordinates" in constellation_data:
+                        all_constellations.append(constellation_data)
 
             return jsonify({
                 "message": "Successfully retrieved constellation data",
