@@ -88,6 +88,7 @@ def parse_gpx(file_path, username):
         return info 
 
     except Exception as e:
+        print(e)
         return []
 
 @app.route('/upload_gpx', methods=['POST'])
@@ -102,8 +103,6 @@ def upload_gps():
             return jsonify({"error": "No file uploaded"}), 400
 
         info = parse_gpx(file, username)
-
-        ipfs_hash = upload_to_pinata(info)
 
         js = jsonify(info)
 
