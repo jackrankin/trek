@@ -113,10 +113,8 @@ def upload_gps():
 @app.route('/get_constellations', methods=['GET'])
 def get_constellations():
     try:
-        # Define the filename filter to get all files named "trekstarwebapp"
         filename_filter = 'trekstarwebapp.json'
 
-        # Pinata API endpoint to list pinned files
         url = f"{PINATA_URL}/data/pinList?status=pinned&nameContains={filename_filter}"
 
         headers = {
@@ -124,7 +122,6 @@ def get_constellations():
             'pinata_secret_api_key': PINATA_SECRET_KEY
         }
 
-        # Make the request to get pinned files from Pinata
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
@@ -133,7 +130,7 @@ def get_constellations():
             all_constellations = []
             for file in pinned_files:
                 ipfs_hash = file['ipfs_pin_hash']
-                ipfs_url = f"https://gateway.pinata.cloud/ipfs/{ipfs_hash}"
+                ipfs_url = f"https://chocolate-occasional-woodpecker-122.mypinata.cloud/ipfs/{ipfs_hash}"
                 file_response = requests.get(ipfs_url)
 
                 if file_response.status_code == 200:
