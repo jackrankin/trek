@@ -2,7 +2,7 @@
 
 # 
 
-jackrankin (me)
+jack rankin (me)
 
 chaitra pirisingula [https://github.com/chaitrapirisingula](github.com/chaitrapirisingula)
 
