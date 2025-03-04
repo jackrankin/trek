@@ -3,12 +3,11 @@ import json
 import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
-from stat_track import GPXAnalyzer
+from math import radians, sin, cos, sqrt, atan2
 
 app = Flask(__name__)
 CORS(app)
 
-# Set your Pinata API credentials here
 PINATA_URL = 'https://api.pinata.cloud'
 PINATA_API_KEY = os.getenv("PINATA_API_KEY")
 PINATA_SECRET_KEY = os.getenv("PINATA_SECRET_KEY")
@@ -40,7 +39,6 @@ def upload_to_pinata(info):
 
 
 
-# Replace the GPX parsing function (optional)
 def parse_gpx(file_path, username):
     try:
         import xml.etree.ElementTree as ET
@@ -49,22 +47,34 @@ def parse_gpx(file_path, username):
         namespace = {'gpx': 'http://www.topografix.com/GPX/1/1'}
 
 
-        dist = 0
-        pace = 0
-        try:
-            tracker = GPXAnalyzer(file)  # Pass the file object directly
-            dist = tracker.calculate_total_distance()
-            pace = tracker.calculate_average_pace()
-        except Exception as e:
-            print(e)
-
         track_points = root.findall('.//gpx:trkpt', namespace)
         coordinates = []
+        dist = 0 
+        pace = 0
+
+        def haversine(lat1, lon1, lat2, lon2):
+            R = 6371
+            lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+            
+            dlat = lat2 - lat1
+            dlon = lon1 - lon2
+            
+            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+            c = 2 * atan2(sqrt(a), sqrt(1 - a))
+            
+            return R * c
+        
         for point in track_points:
             lat = float(point.attrib['lat'])
             lon = float(point.attrib['lon'])
             coordinates.append([lat, lon])
+        
 
+
+        for i in range(1, len(coordinates)):
+            dist += haversine(*coordinates[i - 1], *coordinates[i])
+        
+        dist *= 1.6
 
         info = {
             "name" : username,
@@ -72,6 +82,7 @@ def parse_gpx(file_path, username):
             "pace": pace,
             "coordinates" : coordinates,
         }
+
 
         return info 
 
@@ -123,12 +134,10 @@ def get_constellations():
             all_constellations = []
             for file in pinned_files:
                 ipfs_hash = file['ipfs_pin_hash']
-                # Construct the IPFS gateway URL for each file
                 ipfs_url = f"https://gateway.pinata.cloud/ipfs/{ipfs_hash}"
                 file_response = requests.get(ipfs_url)
 
                 if file_response.status_code == 200:
-                    # Assuming the file contains JSON data
                     constellation_data = file_response.json()
                     all_constellations.append(constellation_data)
 
