@@ -9,19 +9,84 @@ app = Flask(__name__)
 CORS(app)
 
 DB_URL = os.getenv("DATABASE_URL")
-conn = psycopg2.connect(DB_URL)
-cursor = conn.cursor()
 
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS gpx_data (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        distance FLOAT NOT NULL,
-        coordinates JSONB NOT NULL
-    );
-''')
+def get_db_connection():
+    conn = psycopg2.connect(DB_URL)
+    return conn
 
-conn.commit()
+@app.route('/upload_gpx', methods=['POST'])
+def upload_gpx():
+    conn = None
+    cursor = None
+    try:
+        name = request.form.get("name")
+        if not name:
+            return jsonify({"error": "'name' is required"}), 400
+        
+        file = request.files.get("file")
+        if not file:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        # Parse the GPX file
+        info = parse_gpx(file, name)
+
+        # Establish a new connection and cursor for this request
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS gpx_data (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                distance FLOAT NOT NULL,
+                coordinates JSONB NOT NULL
+            );
+        ''')
+
+        cursor.execute(
+            "INSERT INTO gpx_data (name, distance, coordinates) VALUES (%s, %s, %s) RETURNING id",
+            (info["name"], info["distance"], json.dumps(info["coordinates"]))
+        )
+        conn.commit()
+
+        return jsonify(info), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        # Ensure that the cursor and connection are closed after the request
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/get_constellations', methods=['GET'])
+def get_constellations():
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT name, distance, coordinates FROM gpx_data")
+        rows = cursor.fetchall()
+
+        all_constellations = [
+            {"name": row[0], "distance": row[1], "coordinates": row[2]} for row in rows
+        ]
+
+        return jsonify({
+            "message": "Successfully retrieved constellation data",
+            "count": len(all_constellations),
+            "constellations": all_constellations
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 def parse_gpx(file, name):
     import xml.etree.ElementTree as ET
@@ -50,7 +115,7 @@ def parse_gpx(file, name):
         lon = float(point.attrib['lon'])
         dist += haversine(prev_lat, prev_lon, lat, lon)
         prev_lat, prev_lon = lat, lon
-        if i%10 == 0:
+        if i % 10 == 0:
             coordinates.append([lat, lon])
         
     filtered_points = []
@@ -73,48 +138,6 @@ def parse_gpx(file, name):
         "distance": dist,
         "coordinates": filtered_points,
     }
-
-@app.route('/upload_gpx', methods=['POST'])
-def upload_gpx():
-    try:
-        name = request.form.get("name")
-        if not name:
-            return jsonify({"error": "'name' is required"}), 400
-        
-        file = request.files.get("file")
-        if not file:
-            return jsonify({"error": "No file uploaded"}), 400
-
-        info = parse_gpx(file, name)
-
-        cursor.execute(
-            "INSERT INTO gpx_data (name, distance, coordinates) VALUES (%s, %s, %s) RETURNING id",
-            (info["name"], info["distance"], json.dumps(info["coordinates"]))
-        )
-        conn.commit()
-
-        return jsonify(info), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/get_constellations', methods=['GET'])
-def get_constellations():
-    try:
-        cursor.execute("SELECT name, distance, coordinates FROM gpx_data")
-        rows = cursor.fetchall()
-
-        all_constellations = [
-            {"name": row[0], "distance": row[1], "coordinates": row[2]} for row in rows
-        ]
-
-        return jsonify({
-            "message": "Successfully retrieved constellation data",
-            "count": len(all_constellations),
-            "constellations": all_constellations
-        }), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
